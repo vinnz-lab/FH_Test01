@@ -88,6 +88,12 @@ BASE_URL=https://example.com npm test
 
 Failure diagnostics (screenshots and traces) are retained under `test-results/`, and the HTML report is written to `playwright-report/`. These generated outputs and dependencies are excluded from version control. Avoid sharing traces from environments that contain sensitive data.
 
+## Continuous integration
+
+The GitHub Actions workflow in `.github/workflows/regression.yml` runs the full Chromium regression suite when changes are pushed to `main`, for pull requests targeting `main`, and on manual dispatch. It installs locked dependencies and Chromium, performs the TypeScript check, and runs the tests. The Playwright HTML report and available failure diagnostics are uploaded as a workflow artifact, retained for seven days; see the repository's Actions tab for run status and artifacts.
+
+A failing run requires investigation: the suite targets an external demo site, so a network or site outage can cause failures unrelated to a change in this repository. A passing run does not establish cross-browser coverage.
+
 ## Structure and design
 
 - `playwright.config.ts` — browser, base URL, test-ID attribute, reporting and failure diagnostics.
@@ -108,7 +114,7 @@ Prioritised by risk; the first items are the current defects above, followed by 
 3. Empty-cart checkout behaviour, duplicate submission (double-click Finish, refresh after confirmation — noting backend verification limits), order review with multiple products, and checkout cancellation retaining the cart.
 4. Cart persistence across navigation and refresh, and cart behaviour after sorting.
 5. Accessibility: automated checks on key pages plus keyboard navigation, visible focus, field labels and error feedback; automated checks alone do not establish full compliance.
-6. Firefox and WebKit projects and a CI pipeline with retained failure reports.
+6. Add Firefox and WebKit projects to the CI pipeline for broader browser coverage.
 7. Broader account exploration (`visual_user`, `performance_glitch_user`) to distinguish seeded defects from unclear requirements.
 
 ## AI usage and ownership
