@@ -41,11 +41,11 @@ Tests are grouped by feature area under `tests/`. Each test runs in an isolated 
 
 ## Defects and observations
 
-Observed manually on the live demo site outside the scripted suite. Severity is a provisional assessment of potential impact in a production system, not an agreed product severity. The named demo accounts may intentionally exhibit faults. Confirm intended behaviour and requirements before treating these observations as product defects.
+Observed on the live demo site outside the scripted regression suite, through interactive exploration and standalone browser checks. Severity is a provisional assessment of potential impact in a production system, not an agreed product severity. The named demo accounts may intentionally exhibit faults. Confirm intended behaviour and requirements before treating these observations as product defects.
 
 | ID | Severity | Summary | Steps | Expected vs actual |
 | --- | --- | --- | --- | --- |
-| DEF-01 | High | Cart contents are shared between different users in the same browser | Add a product as `standard_user`; log out; log in as `error_user` in the same browser | Proposed expectation: a different user should not inherit the previous user's cart; confirm the product requirement. Actual: `error_user` sees the backpack left by `standard_user`. In a production system, this could create privacy or order-integrity risk. |
+| DEF-01 | High | Cart contents are shared between different users in the same browser | Add a backpack as `standard_user`; log out; log in as `performance_glitch_user` in the same browser and open the cart | Proposed expectation: a different user should not inherit the previous user's cart; confirm the product requirement. Actual: `performance_glitch_user` sees the backpack left by `standard_user`. In a production system, this could create privacy or order-integrity risk. |
 | DEF-02 | Medium | Product sorting does not work for `problem_user` | Log in as `problem_user`; select Name (Z to A) in the sort dropdown | Expected: the list reorders. Actual: the dropdown reverts to A-to-Z and the order never changes. |
 | DEF-03 | Medium | `error_user` cannot add the red T-shirt from its product page | Log in as `error_user`; open "Test.allTheThings() T-Shirt (Red)"; click Add to cart | Expected: the item is added and the button changes to Remove. Actual: nothing happens and no feedback is shown. |
 | OBS-01 | Question | Cart quantities cannot be changed | Add any product and open the cart | There is no control to update the quantity, only Remove. Confirm whether the requirement expects quantity editing. |
@@ -124,7 +124,7 @@ Prioritised by risk; the first items are the current defects above, followed by 
 
 ## AI usage and ownership
 
-Veneet selected Playwright, agreed the initial scenarios and supplied the defect observations that seeded the exploration. Hyperagent assisted with analysing the brief, proposing the test approach, generating the project and README, executing the tests, and diagnosing and correcting a selector-configuration issue and navigation races found during repeat runs. A separate AI subagent was asked to inspect the public demo site and suggest selectors and expected behaviours; it did not create a custom skill or persistent agent. No custom AI skills or persistent agents were created for the assignment. The candidate is responsible for reviewing the implementation, understanding the design choices and confirming that the final submission reflects their own assessment and decisions.
+Veneet provided the assignment and brief, contributed the test approach and priorities, and raised observable issues on the site. An AI agent helped refine the test plan and generated the project code and README; it also ran tests, investigated findings, and helped diagnose failures. A separate AI subagent was asked to inspect the public demo site and suggest selectors and expected behaviours. No custom AI skills or persistent agents were created for this assignment, and there is no AI dependency when running the tests. The candidate is responsible for reviewing the implementation, understanding the design choices and confirming that the final submission reflects their own assessment and decisions.
 
 ## Validation performed
 
