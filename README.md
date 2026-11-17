@@ -95,7 +95,7 @@ Failure diagnostics (screenshots and traces) are retained under `test-results/`,
 
 ## Continuous integration
 
-The GitHub Actions workflow in `.github/workflows/regression.yml` is intended to run the full Chromium suite plus the `@core` Firefox and WebKit tests on pushes to `main`, pull requests targeting `main`, and manual dispatch. It must install all three browsers before running the suite. It uploads the Playwright report and available failure diagnostics as an artifact retained for seven days; see the Actions tab for the latest results. Cross-browser CI is pending verification.
+The GitHub Actions workflow in `.github/workflows/regression.yml` is intended to run the full Chromium suite plus the `@core` Firefox and WebKit tests on pushes to `main`, pull requests targeting `main`, and manual dispatch. It must install all three browsers before running the suite. It uploads the Playwright report and available failure diagnostics as an artifact retained for seven days; see the Actions tab for the latest results. The [cross-browser CI run](https://github.com/vinnz-lab/FH_Test01/actions/runs/44188792784) passed, including the type check, test step and report upload.
 
 A failing run requires investigation: the suite targets an external demo site, so a network or site outage can cause failures unrelated to a change in this repository. Passing a core subset across three engines does not establish complete cross-browser coverage.
 
@@ -128,4 +128,4 @@ Veneet selected Playwright, agreed the initial scenarios and supplied the defect
 
 ## Validation performed
 
-The updated suite passed all 13 Chromium tests and TypeScript checking locally; the slow-user test was also run successfully twice in isolation. Cross-browser CI remains to be verified. Three `@core` tests are configured for each of Firefox and WebKit. In the local sandbox, Firefox could not access the site due to `SEC_ERROR_UNKNOWN_ISSUER`, and WebKit could not launch because system dependencies were missing; neither is treated as a product defect. Cross-browser GitHub Actions execution remains to be verified. Results can vary if the demo site or network changes.
+The updated suite passed all 13 Chromium tests and TypeScript checking locally; the slow-user test was also run successfully twice in isolation. The configured matrix has 19 executions: all 13 tests in Chromium and three core tests each in Firefox and WebKit. The cross-browser GitHub Actions run passed its test and type-check steps. Three `@core` tests are configured for each of Firefox and WebKit. In the local sandbox, Firefox could not access the site due to `SEC_ERROR_UNKNOWN_ISSUER`, and WebKit could not launch because system dependencies were missing; neither is treated as a product defect. These local limitations were followed by a passing cross-browser run in GitHub Actions. Results can vary if the demo site or network changes.
