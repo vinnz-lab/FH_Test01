@@ -95,20 +95,40 @@ Failure diagnostics (screenshots and traces) are retained under `test-results/`,
 
 ## Continuous integration
 
-The GitHub Actions workflow in `.github/workflows/regression.yml` is intended to run the full Chromium suite plus the `@core` Firefox and WebKit tests on pushes to `main`, pull requests targeting `main`, and manual dispatch. It must install all three browsers before running the suite. It uploads the Playwright report and available failure diagnostics as an artifact retained for seven days; see the Actions tab for the latest results. The [cross-browser CI run](https://github.com/vinnz-lab/FH_Test01/actions/runs/44188792784) passed, including the type check, test step and report upload.
+The GitHub Actions workflow in `.github/workflows/regression.yml` is intended to run the full Chromium suite plus the `@core` Firefox and WebKit tests on pushes to `main`, pull requests targeting `main`, and manual dispatch. It must install all three browsers before running the suite. It uploads the Playwright report and available failure diagnostics as an artifact retained for seven days; see the Actions tab for the latest results. The [cross-browser CI run](https://github.com/vinnz-lab/FH_Test01/actions/runs/44193733604) passed, including the type check, test step and report upload.
 
 A failing run requires investigation: the suite targets an external demo site, so a network or site outage can cause failures unrelated to a change in this repository. Passing a core subset across three engines does not establish complete cross-browser coverage.
 
-## Structure and design
+## Coverage and design
 
-- `playwright.config.ts` — browser, base URL, test-ID attribute, reporting and failure diagnostics.
-- `pages/login-page.ts` — login and logout interactions.
-- `pages/shop-page.ts` — shared cart, sorting and checkout interactions.
-- `tests/auth.spec.ts`, `tests/sorting.spec.ts`, `tests/cart.spec.ts`, `tests/checkout.spec.ts` — scenarios grouped by feature area.
-- `tests/support.ts` — shared sign-in helper and product-order readers.
-- `package-lock.json` — locked dependency versions for repeatable installs.
+| Component | Responsibility |
+| --- | --- |
+| `pages/login-page.ts` | Login and logout interactions. |
+| `pages/shop-page.ts` | Product, cart, sorting and checkout interactions. |
+| `tests/support.ts` | Shared sign-in helper and product-order readers. |
+| `tests/auth.spec.ts` | Successful and rejected login, slow-user handling and route protection. |
+| `tests/cart.spec.ts` | Cart contents, removal and persistence. |
+| `tests/checkout.spec.ts` | Checkout validation, order review and completion; includes the integer-cents conversion helper. |
+| `tests/sorting.spec.ts` | Name and price ordering. |
+| `playwright.config.ts` | Browser projects, isolation, reporting and failure diagnostics. |
+| `.github/workflows/regression.yml` | CI setup, test execution and report upload. |
+| `package-lock.json` | Locked dependency versions for repeatable installs. |
 
-Small page objects keep selectors and routine interactions together; assertions stay in the tests so the business intent is visible. Navigation-sensitive helpers wait for the destination page, so tests do not race page loads. Sauce Demo exposes `data-test` attributes, configured as Playwright's test ID attribute, alongside accessible roles and placeholders. Sorting tests compute the expected order instead of hard-coding catalogue contents. The suite relies on Playwright's automatic waiting instead of fixed sleeps. The slow-user test allows a bounded 45-second test timeout and a 15-second condition wait; it records elapsed time but does not claim to measure performance against an SLA.
+Small page objects keep interactions and selectors reusable; assertions remain visible in the tests. Each test receives an isolated Playwright browser context and uses the UI to authenticate where needed, avoiding shared mutable login state and dependence on test order. Navigation-sensitive helpers wait for destination content.
+
+Locators use user-facing roles or placeholders where appropriate and the application's `data-test` attributes as an explicit selector contract. Sorting checks compare the displayed sequence against a sorted copy of the original names or prices, wait for the expected order, and check that multiple distinct values are present. Names use JavaScript's `localeCompare` in the execution environment; requirements for punctuation, case and locale should be agreed before treating ambiguous ordering as a defect.
+
+The checkout test carries two selected products and their displayed prices from the cart to the order overview. It converts dollar values to integer cents and checks the item sum, subtotal and total against displayed tax. This checks arithmetic consistency, not whether an unspecified tax rate is correct or whether a displayed price matches an external price source.
+
+The full suite runs in Chromium; the `@core` login, cart-persistence and checkout tests also run in Firefox and WebKit. Playwright WebKit is an engine check, not certification of real Safari on macOS or iOS. Automated accessibility scans and keyboard-navigation checks are **not implemented** in this project; they are future work and automated checks alone would not establish accessibility compliance.
+
+The suite relies on condition-based waits rather than fixed sleeps. The slow-user test has a bounded 45-second test timeout and 15-second condition waits; it records elapsed time but does not assess performance against an unagreed SLA.
+
+## Accounts and data
+
+The baseline uses Sauce Demo's publicly displayed `standard_user` and demo password `secret_sauce`. `locked_out_user` exercises rejection, and `performance_glitch_user` exercises slow login. Manual observations also involve `problem_user` and `error_user`; those observations are not part of the automated regression suite. These are public demo credentials, not production secrets. Checkout data is synthetic and no personal customer information is required.
+
+The checkout flow has first name, last name and postal code fields; it does not have an email field, so the suite does not invent an email test. Country-specific postal-code rules and field lengths need product clarification. Legitimate names may include accents, apostrophes, hyphens and non-English characters; broader input coverage is listed in To Do rather than claimed as implemented.
 
 ## To Do / next steps
 
