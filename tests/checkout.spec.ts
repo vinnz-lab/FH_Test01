@@ -60,10 +60,13 @@ test('checkout requires each customer field in turn and keeps entries while corr
   await page.getByPlaceholder('First Name').fill('Alex');
   await shop.submitCustomerDetails();
   await expect(page.getByTestId('error')).toHaveText(/Last Name is required/);
+  await expect(page.getByPlaceholder('First Name')).toHaveValue('Alex');
 
   await page.getByPlaceholder('Last Name').fill('Tester');
   await shop.submitCustomerDetails();
   await expect(page.getByTestId('error')).toHaveText(/Postal Code is required/);
+  await expect(page.getByPlaceholder('First Name')).toHaveValue('Alex');
+  await expect(page.getByPlaceholder('Last Name')).toHaveValue('Tester');
 
   await page.getByPlaceholder('Zip/Postal Code').fill('M1 1AA');
   await shop.submitCustomerDetails();

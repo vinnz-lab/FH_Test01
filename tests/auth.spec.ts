@@ -1,6 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { LoginPage } from '../pages/login-page';
 import { demoPassword, demoUser } from './support';
+
+async function expectInventoryAccessDenied(page: Page): Promise<void> {
+  await page.goto('/inventory.html');
+  await expect(page.getByTestId('error')).toHaveText(
+    "Epic sadface: You can only access '/inventory.html' when you are logged in.",
+  );
+  await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
+}
 
 test('@core a standard user can log in and see the product inventory', async ({ page }) => {
   const login = new LoginPage(page);
@@ -38,6 +46,7 @@ test('incorrect credentials are rejected without opening the inventory', async (
   );
   await expect(page).not.toHaveURL(/\/inventory\.html$/);
   await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
+  await expectInventoryAccessDenied(page);
 });
 
 test('a locked-out account is refused with a clear error', async ({ page }) => {
@@ -49,6 +58,7 @@ test('a locked-out account is refused with a clear error', async ({ page }) => {
     'Epic sadface: Sorry, this user has been locked out.',
   );
   await expect(page).toHaveURL(/\/$/);
+  await expectInventoryAccessDenied(page);
 });
 
 test('missing login fields are rejected before any session is created', async ({ page }) => {
@@ -60,6 +70,7 @@ test('missing login fields are rejected before any session is created', async ({
 
   await login.login(demoUser, '');
   await expect(page.getByTestId('error')).toHaveText('Epic sadface: Password is required');
+  await expectInventoryAccessDenied(page);
 });
 
 test('logging out ends the session and protects direct inventory access', async ({ page }) => {
