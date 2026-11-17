@@ -90,7 +90,7 @@ Failure diagnostics (screenshots and traces) are retained under `test-results/`,
 
 ## Continuous integration
 
-**Planned, not yet configured:** Add a GitHub Actions workflow to run the Chromium regression suite on pushes to `main`, pull requests targeting `main`, and manual dispatch. The proposed workflow installs dependencies and Chromium, runs the TypeScript check and tests, and retains the Playwright report and failure diagnostics for seven days. The workflow has not yet been committed or validated on GitHub Actions.
+The GitHub Actions workflow in `.github/workflows/regression.yml` runs the Chromium regression suite on pushes to `main`, pull requests targeting `main`, and manual dispatch. It installs dependencies and Chromium, runs the TypeScript check and tests, and uploads the Playwright report and available failure diagnostics as an artifact retained for seven days. The [initial CI run](https://github.com/vinnz-lab/FH_Test01/actions/runs/44160523004) passed; subsequent results are available in the Actions tab.
 
 A failing run requires investigation: the suite targets an external demo site, so a network or site outage can cause failures unrelated to a change in this repository. A passing run does not establish cross-browser coverage.
 
@@ -114,7 +114,7 @@ Prioritised by risk; the first items are the current defects above, followed by 
 3. Empty-cart checkout behaviour, duplicate submission (double-click Finish, refresh after confirmation — noting backend verification limits), order review with multiple products, and checkout cancellation retaining the cart.
 4. Cart persistence across navigation and refresh, and cart behaviour after sorting.
 5. Accessibility: automated checks on key pages plus keyboard navigation, visible focus, field labels and error feedback; automated checks alone do not establish full compliance.
-6. Add and validate the proposed CI workflow, then consider Firefox and WebKit for broader browser coverage.
+6. Add Firefox and WebKit projects to the CI pipeline for broader browser coverage.
 7. Broader account exploration (`visual_user`, `performance_glitch_user`) to distinguish seeded defects from unclear requirements.
 
 ## AI usage and ownership
