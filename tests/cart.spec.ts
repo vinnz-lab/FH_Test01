@@ -23,6 +23,30 @@ test('a product can be added to and removed from the cart', async ({ page }) => 
   await expect(page.getByTestId('shopping-cart-badge')).toHaveCount(0);
 });
 
+test('@core cart contents persist through shopping navigation and page refresh', async ({ page }) => {
+  await signIn(page);
+  const shop = new ShopPage(page);
+  await shop.addToCart(backpack);
+  await shop.addToCart(bikeLight);
+  await expect(page.getByTestId('shopping-cart-badge')).toHaveText('2');
+
+  await shop.openCart();
+  await expect(page.getByTestId('inventory-item-name')).toHaveText([
+    'Sauce Labs Backpack', 'Sauce Labs Bike Light',
+  ]);
+  await expect(page.getByTestId('inventory-item-price')).toHaveText(['$29.99', '$9.99']);
+  await shop.backToInventory();
+  await expect(page).toHaveURL(/\/inventory\.html$/);
+  await page.reload();
+  await expect(page.getByTestId('shopping-cart-badge')).toHaveText('2');
+  await shop.openCart();
+  await expect(page.getByTestId('inventory-item-name')).toHaveText([
+    'Sauce Labs Backpack', 'Sauce Labs Bike Light',
+  ]);
+  await expect(page.getByTestId('inventory-item-price')).toHaveText(['$29.99', '$9.99']);
+  await expect(page.getByTestId('item-quantity')).toHaveText(['1', '1']);
+});
+
 test('several products are tracked together and can be removed from the inventory', async ({ page }) => {
   await signIn(page);
   const shop = new ShopPage(page);

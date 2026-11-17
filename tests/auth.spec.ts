@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { LoginPage } from '../pages/login-page';
 import { demoPassword, demoUser } from './support';
 
-test('a standard user can log in and see the product inventory', async ({ page }) => {
+test('@core a standard user can log in and see the product inventory', async ({ page }) => {
   const login = new LoginPage(page);
   await login.open();
   await login.login(demoUser, demoPassword);
@@ -11,6 +11,21 @@ test('a standard user can log in and see the product inventory', async ({ page }
   await expect(page.getByTestId('title')).toHaveText('Products');
   await expect(page.getByTestId('inventory-item')).not.toHaveCount(0);
   await expect(page.getByTestId('shopping-cart-link')).toBeVisible();
+});
+
+test('the slow demo user can log in when given a bounded wait', async ({ page }, testInfo) => {
+  // This user deliberately loads slowly. Wait for a real result, never a fixed sleep.
+  test.setTimeout(45_000);
+  const login = new LoginPage(page);
+  await login.open();
+  const started = Date.now();
+  await login.login('performance_glitch_user', demoPassword);
+  await expect(page).toHaveURL(/\/inventory\.html$/, { timeout: 15_000 });
+  await expect(page.getByTestId('title')).toHaveText('Products', { timeout: 15_000 });
+  await testInfo.attach('slow-login-elapsed-ms', {
+    body: String(Date.now() - started),
+    contentType: 'text/plain',
+  });
 });
 
 test('incorrect credentials are rejected without opening the inventory', async ({ page }) => {

@@ -12,5 +12,10 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Run the full suite in Chromium and only the critical journey in the other engines.
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', grep: /@core/, use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', grep: /@core/, use: { ...devices['Desktop Safari'] } },
+  ],
 });

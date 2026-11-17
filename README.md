@@ -14,6 +14,7 @@ Tests are grouped by feature area under `tests/`. Each test runs in an isolated 
 | Incorrect password | A clear error appears, the user stays logged out and cannot reach the inventory. |
 | Locked-out account | `locked_out_user` is refused with a clear error and no session is created. |
 | Missing fields | Submitting an empty form, then a missing password, produces the correct required-field errors. |
+| Slow demo user | `performance_glitch_user` reaches the inventory using a bounded, condition-based wait. Elapsed time is attached for information, not judged against an unagreed performance target. |
 | Logout and route protection | Logging out ends the session, and directly reopening `/inventory.html` is refused with a clear error. |
 
 ### Sorting (`tests/sorting.spec.ts`)
@@ -29,12 +30,13 @@ Tests are grouped by feature area under `tests/`. Each test runs in an isolated 
 | --- | --- |
 | Add and remove one product | The badge updates, the cart shows the correct name, price and quantity, and removal empties the cart. |
 | Multiple products | Two products appear with correct names and prices, removal works from the inventory page, and the remaining product stays in the cart. |
+| Cart persistence (`@core`) | Two selected products, prices, quantities and the badge persist through navigation and page refresh in the same browser session. |
 
 ### Checkout (`tests/checkout.spec.ts`)
 
 | Test | Verifies |
 | --- | --- |
-| Complete checkout | The overview shows the selected product with subtotal, tax and total matching the known baseline; finishing shows the confirmation and removes the cart badge. |
+| Complete checkout (`@core`) | Two selected products and their prices carry through to the overview. Integer-cent assertions check the subtotal against the items and the total against subtotal plus displayed tax. Finishing shows confirmation and removes the cart badge. |
 | Required customer details | Each missing field is validated in turn, and correcting the errors preserves earlier entries and reaches the order overview. |
 
 ## Defects and observations
@@ -47,18 +49,19 @@ Observed manually on the live demo site outside the scripted suite. Severity is 
 | DEF-02 | Medium | Product sorting does not work for `problem_user` | Log in as `problem_user`; select Name (Z to A) in the sort dropdown | Expected: the list reorders. Actual: the dropdown reverts to A-to-Z and the order never changes. |
 | DEF-03 | Medium | `error_user` cannot add the red T-shirt from its product page | Log in as `error_user`; open "Test.allTheThings() T-Shirt (Red)"; click Add to cart | Expected: the item is added and the button changes to Remove. Actual: nothing happens and no feedback is shown. |
 | OBS-01 | Question | Cart quantities cannot be changed | Add any product and open the cart | There is no control to update the quantity, only Remove. Confirm whether the requirement expects quantity editing. |
+| OBS-02 | Question | Duplicate-looking item in the lazy-load catalogue | Log in as `performance_glitch_user`; open Dynamic Catalog > Lazy Load | Two separate cards displayed `Test.allTheThings() T-Shirt (Red) (L)` at `$15.99` with the same image. Confirm product identifiers and catalogue requirements before treating this as a duplicate SKU defect. |
 
 Priority recommendation: investigate DEF-01 first because cart contents crossed user boundaries in the same browser. DEF-02 and DEF-03 affect specific demo accounts; verify their intended behaviour. Once requirements are agreed, automate relevant regression tests.
 
 ## Limitations
 
-A passing run provides Chromium desktop coverage only. It is not evidence of cross-browser, accessibility, performance or security compliance. The suite asserts visible behaviour; it cannot verify backend state such as whether a duplicate order was created. The checkout test asserts the demo backpack's price and tax as a known baseline, so legitimate changes to the demo catalogue require review rather than blind updates.
+The complete suite runs in desktop Chromium; the `@core` login, cart persistence and checkout tests are also configured for Firefox and WebKit. Browser-engine checks are not equivalent to testing branded browsers and devices, or real Safari on macOS/iOS. The suite does not establish accessibility, performance or security compliance. It asserts visible behaviour and cannot verify backend state such as duplicate order persistence. Checkout arithmetic checks consistency with the displayed tax, not the correctness of an unspecified tax policy.
 
 ## Prerequisites
 
 - Node.js 20 or later and npm. This project was validated with Node.js 24.22.3 and npm 11.19.1.
 - Internet access to npm, the Playwright browser download service, and Sauce Demo.
-- Playwright's Chromium browser and its operating-system dependencies. On supported Linux distributions, `npx playwright install --with-deps chromium` installs both browser and system dependencies (may require elevated privileges). On other systems, use `npx playwright install chromium`.
+- Playwright's Chromium, Firefox and WebKit browsers and their operating-system dependencies. On supported Linux distributions, `npx playwright install --with-deps chromium firefox webkit` installs browsers and system dependencies (may require elevated privileges). On other systems, use `npx playwright install chromium firefox webkit`.
 
 ## Setup and run
 
@@ -66,7 +69,7 @@ From the repository root:
 
 ```bash
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 npm run typecheck
 npm test
 ```
@@ -78,6 +81,8 @@ npm run test:headed      # visible browser; requires a graphical environment
 npm run test:ui          # Playwright interactive UI
 npm test -- --workers=4  # exercise tests in parallel
 npm run test:report      # open the HTML report after a run
+npx playwright test --project=chromium  # full Chromium suite
+npx playwright test --grep @core       # small core across all configured engines
 ```
 
 The default target is `https://www.saucedemo.com`. For a compatible alternative environment, set `BASE_URL` before running, for example:
@@ -90,9 +95,9 @@ Failure diagnostics (screenshots and traces) are retained under `test-results/`,
 
 ## Continuous integration
 
-The GitHub Actions workflow in `.github/workflows/regression.yml` runs the Chromium regression suite on pushes to `main`, pull requests targeting `main`, and manual dispatch. It installs dependencies and Chromium, runs the TypeScript check and tests, and uploads the Playwright report and available failure diagnostics as an artifact retained for seven days. The [initial CI run](https://github.com/vinnz-lab/FH_Test01/actions/runs/44160523004) passed; subsequent results are available in the Actions tab.
+The GitHub Actions workflow in `.github/workflows/regression.yml` is intended to run the full Chromium suite plus the `@core` Firefox and WebKit tests on pushes to `main`, pull requests targeting `main`, and manual dispatch. It must install all three browsers before running the suite. It uploads the Playwright report and available failure diagnostics as an artifact retained for seven days; see the Actions tab for the latest results. Cross-browser CI is pending verification.
 
-A failing run requires investigation: the suite targets an external demo site, so a network or site outage can cause failures unrelated to a change in this repository. A passing run does not establish cross-browser coverage.
+A failing run requires investigation: the suite targets an external demo site, so a network or site outage can cause failures unrelated to a change in this repository. Passing a core subset across three engines does not establish complete cross-browser coverage.
 
 ## Structure and design
 
@@ -103,7 +108,7 @@ A failing run requires investigation: the suite targets an external demo site, s
 - `tests/support.ts` — shared sign-in helper and product-order readers.
 - `package-lock.json` — locked dependency versions for repeatable installs.
 
-Small page objects keep selectors and routine interactions together; assertions stay in the tests so the business intent is visible. Navigation-sensitive helpers wait for the destination page, so tests do not race page loads. Sauce Demo exposes `data-test` attributes, configured as Playwright's test ID attribute, alongside accessible roles and placeholders. Sorting tests compute the expected order instead of hard-coding catalogue contents. The suite relies on Playwright's automatic waiting instead of fixed sleeps.
+Small page objects keep selectors and routine interactions together; assertions stay in the tests so the business intent is visible. Navigation-sensitive helpers wait for the destination page, so tests do not race page loads. Sauce Demo exposes `data-test` attributes, configured as Playwright's test ID attribute, alongside accessible roles and placeholders. Sorting tests compute the expected order instead of hard-coding catalogue contents. The suite relies on Playwright's automatic waiting instead of fixed sleeps. The slow-user test allows a bounded 45-second test timeout and a 15-second condition wait; it records elapsed time but does not claim to measure performance against an SLA.
 
 ## To Do / next steps
 
@@ -111,11 +116,11 @@ Prioritised by risk; the first items are the current defects above, followed by 
 
 1. Automate regression tests for DEF-01 to DEF-03 once expected behaviour is agreed.
 2. Additional checkout data cases: whitespace-only values, leading/trailing spaces, apostrophes and hyphens, accented and non-English names, numbers-only names, boundary lengths, postal-code formats including leading zeros, and HTML-like input handled safely as text.
-3. Empty-cart checkout behaviour, duplicate submission (double-click Finish, refresh after confirmation — noting backend verification limits), order review with multiple products, and checkout cancellation retaining the cart.
-4. Cart persistence across navigation and refresh, and cart behaviour after sorting.
+3. Empty-cart checkout behaviour, duplicate submission (double-click Finish, refresh after confirmation — noting backend verification limits), and checkout cancellation retaining the cart.
+4. Cart behaviour after sorting and agreed expectations for carts across different users.
 5. Accessibility: automated checks on key pages plus keyboard navigation, visible focus, field labels and error feedback; automated checks alone do not establish full compliance.
-6. Add Firefox and WebKit projects to the CI pipeline for broader browser coverage.
-7. Broader account exploration (`visual_user`, `performance_glitch_user`) to distinguish seeded defects from unclear requirements.
+6. Broaden cross-browser coverage beyond the core subset and verify on real devices.
+7. Agree performance budgets before judging `performance_glitch_user` timing; investigate the dynamic catalogue with reliable product identifiers. Explore `visual_user` separately.
 
 ## AI usage and ownership
 
@@ -123,4 +128,4 @@ Veneet selected Playwright, agreed the initial scenarios and supplied the defect
 
 ## Validation performed
 
-All eleven tests were run against the live Sauce Demo site in Chromium. `npm ci` and `npm run typecheck` succeeded, and the full suite passed in three consecutive four-worker runs and one single-worker run; a fresh extraction and `npm ci` also passed the full suite with four workers. The validation environment reported that its operating system was not officially supported by Playwright and used an Ubuntu 24.04 fallback browser build; results can vary if the demo site or network changes.
+The updated suite passed all 13 Chromium tests and TypeScript checking locally; the slow-user test was also run successfully twice in isolation. Cross-browser CI remains to be verified. Three `@core` tests are configured for each of Firefox and WebKit. In the local sandbox, Firefox could not access the site due to `SEC_ERROR_UNKNOWN_ISSUER`, and WebKit could not launch because system dependencies were missing; neither is treated as a product defect. Cross-browser GitHub Actions execution remains to be verified. Results can vary if the demo site or network changes.
