@@ -1,0 +1,19 @@
+{
+  "name": "sauce-demo-qa-automation",
+  "version": "1.0.0",
+  "description": "Lean Playwright and TypeScript end-to-end tests for Sauce Demo",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/node": "26.6.6",
+    "typescript": "7.0.2"
+  },
+  "private": true
+}
